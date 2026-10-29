@@ -69,10 +69,6 @@ if(Autoscoper_COLLISION_DETECTION) # Add collision detection sources
 endif()
 
 if(Autoscoper_RENDERING_BACKEND STREQUAL "CUDA")
-  # CUDA 10.2 supports C++ up to version 14
-  # See https://docs.nvidia.com/cuda/archive/10.2/cuda-c-programming-guide/index.html#c-cplusplus-language-support
-  set(CMAKE_CUDA_STANDARD 14)
-  set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
   if("$ENV{CUDAARCHS}" STREQUAL "" AND NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
     if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.23")
       set(_cuda_achitectures "all")
@@ -96,6 +92,15 @@ if(Autoscoper_RENDERING_BACKEND STREQUAL "CUDA")
     set(ENV{CUDAARCHS} "${_cuda_achitectures}")
   endif()
   enable_language(CUDA)
+  # CUDA 10.2 supports C++ up to version 14, while CCCL (Thrust) bundled with
+  # CUDA >= 13.0 requires C++17, which is supported since CUDA 11.0.
+  # See https://docs.nvidia.com/cuda/archive/10.2/cuda-c-programming-guide/index.html#c-cplusplus-language-support
+  if(CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "11.0")
+    set(CMAKE_CUDA_STANDARD 17)
+  else()
+    set(CMAKE_CUDA_STANDARD 14)
+  endif()
+  set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
   find_package(CUDAToolkit REQUIRED)
   include(${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/cuda/CMakeLists.txt)
   if(WIN32)
@@ -105,6 +110,11 @@ if(Autoscoper_RENDERING_BACKEND STREQUAL "CUDA")
     string(REPLACE "-utf-8" "" CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS}")
     string(REPLACE "/utf-8" "" CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS}")
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=\"/utf-8\"")
+    # CCCL (Thrust) bundled with CUDA >= 13.0 requires the standard conforming
+    # MSVC preprocessor.
+    if(CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "13.0")
+      set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=\"/Zc:preprocessor\"")
+    endif()
   endif()
   add_library(libautoscoper STATIC ${libautoscoper_SOURCES} ${libautoscoper_HEADERS} ${cuda_HEADERS} ${cuda_SOURCES} ${cuda_KERNEL_HEADERS} ${cuda_KERNEL})
   target_include_directories(libautoscoper PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/cuda/cutil)

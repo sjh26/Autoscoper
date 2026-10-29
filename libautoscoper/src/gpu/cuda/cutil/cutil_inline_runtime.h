@@ -97,7 +97,10 @@ inline int cutGetMaxGflopsDeviceId()
       sm_per_multiproc = arch_cores_sm[2];
     }
 
-    int compute_perf = deviceProp.multiProcessorCount * sm_per_multiproc * deviceProp.clockRate;
+    // cudaDeviceProp::clockRate was removed in CUDA 13.0
+    int clock_rate = 0;
+    cudaDeviceGetAttribute(&clock_rate, cudaDevAttrClockRate, current_device);
+    int compute_perf = deviceProp.multiProcessorCount * sm_per_multiproc * clock_rate;
     if (compute_perf > max_compute_perf) {
       // If we find GPU with SM major > 2, search only these
       if (best_SM_arch > 2) {
@@ -170,9 +173,9 @@ inline void __cudaSafeCall(cudaError err, const char* file, const int line)
 
 inline void __cudaSafeThreadSync(const char* file, const int line)
 {
-  cudaError err = cudaThreadSynchronize();
+  cudaError err = cudaDeviceSynchronize();
   if (cudaSuccess != err) {
-    FPRINTF((stderr, "%s(%i) : cudaThreadSynchronize() Driver API error : %s.\n", file, line, cudaGetErrorString(err)));
+    FPRINTF((stderr, "%s(%i) : cudaDeviceSynchronize() Driver API error : %s.\n", file, line, cudaGetErrorString(err)));
     exit(-1);
   }
 }
@@ -208,10 +211,10 @@ inline void __cutilCheckMsg(const char* errorMessage, const char* file, const in
     exit(-1);
   }
 #ifdef _DEBUG
-  err = cudaThreadSynchronize();
+  err = cudaDeviceSynchronize();
   if (cudaSuccess != err) {
     FPRINTF((stderr,
-             "%s(%i) : cutilCheckMsg cudaThreadSynchronize error: %s : %s.\n",
+             "%s(%i) : cutilCheckMsg cudaDeviceSynchronize error: %s : %s.\n",
              file,
              line,
              errorMessage,
@@ -278,7 +281,7 @@ inline void cutilCudaCheckCtxLost(const char* errorMessage, const char* file, co
     FPRINTF((stderr, "%s(%i) : CUDA error: %s : %s.\n", file, line, errorMessage, cudaGetErrorString(err)));
     exit(-1);
   }
-  err = cudaThreadSynchronize();
+  err = cudaDeviceSynchronize();
   if (cudaSuccess != err) {
     FPRINTF((stderr, "%s(%i) : CCUDA error: %s : %s.\n", file, line, errorMessage, cudaGetErrorString(err)));
     exit(-1);

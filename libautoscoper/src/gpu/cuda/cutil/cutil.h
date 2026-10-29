@@ -742,7 +742,7 @@ float CUTIL_API cutGetAverageTimerValue(const unsigned int name);
 
 #define CUDA_SAFE_THREAD_SYNC()                                                                                   \
   {                                                                                                               \
-    cudaError err = cudaThreadSynchronize();                                                                      \
+    cudaError err = cudaDeviceSynchronize();                                                                      \
     if (cudaSuccess != err) {                                                                                     \
       fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n", __FILE__, __LINE__, cudaGetErrorString(err)); \
     }                                                                                                             \
@@ -777,7 +777,7 @@ float CUTIL_API cutGetAverageTimerValue(const unsigned int name);
                 cudaGetErrorString(err));                         \
         exit(EXIT_FAILURE);                                       \
       }                                                           \
-      err = cudaThreadSynchronize();                              \
+      err = cudaDeviceSynchronize();                              \
       if (cudaSuccess != err) {                                   \
         fprintf(stderr,                                           \
                 "Cuda error: %s in file '%s' in line %i : %s.\n", \
@@ -865,7 +865,7 @@ float CUTIL_API cutGetAverageTimerValue(const unsigned int name);
                 cudaGetErrorString(err));                         \
         exit(EXIT_FAILURE);                                       \
       }                                                           \
-      err = cudaThreadSynchronize();                              \
+      err = cudaDeviceSynchronize();                              \
       if (cudaSuccess != err) {                                   \
         fprintf(stderr,                                           \
                 "Cuda error: %s in file '%s' in line %i : %s.\n", \
@@ -890,7 +890,7 @@ float CUTIL_API cutGetAverageTimerValue(const unsigned int name);
                 cudaGetErrorString(err));                         \
         exit(EXIT_FAILURE);                                       \
       }                                                           \
-      err = cudaThreadSynchronize();                              \
+      err = cudaDeviceSynchronize();                              \
       if (cudaSuccess != err) {                                   \
         fprintf(stderr,                                           \
                 "Cuda error: %s in file '%s' in line %i : %s.\n", \
